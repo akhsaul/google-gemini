@@ -21,13 +21,20 @@ const upload = multer({
 });
 
 app.post("/generate-text", async (req, res) => {
-  const { prompt } = req.body;
+  const prompt = req.body.prompt;
+
+  if (!prompt) {
+    return res.status(400).json({
+      error: true,
+      message: "Prompt is required!",
+    });
+  }
+
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
     });
-    console.log(response.text);
     res.json({
       error: false,
       output: response.text,
@@ -44,7 +51,7 @@ app.post("/generate-text", async (req, res) => {
 // upload.single(formDataYangDicari: string)
 // contoh: upload.single('image') --> yang dicari di FormData yang bernama 'image'
 app.post("/generate-from-image", upload.single("image"), async (req, res) => {
-  const { prompt = "Describe this uploaded image." } = req.body;
+  const { prompt = "Describe this uploaded image." } = req.body.prompt;
 
   try {
     // 1. Baca file gambar
@@ -96,7 +103,7 @@ app.post(
       console.log({ documentPart });
 
       const result = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.0-flash",
         contents: [createUserContent([prompt, documentPart])],
       });
 
@@ -119,7 +126,6 @@ app.post("/generate-from-audio", upload.single("audio"), async (req, res) => {
   const { prompt = "Describe this uploaded audio." } = req.body;
 
   try {
-    console.log(req.file);
     const audioBuffer = fs.readFileSync(req.file.path);
     const base64Audio = audioBuffer.toString("base64");
     const mimeType = req.file.mimetype;
@@ -131,7 +137,7 @@ app.post("/generate-from-audio", upload.single("audio"), async (req, res) => {
     console.log({ audioPart });
 
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: [createUserContent([prompt, audioPart])],
     });
 
@@ -160,7 +166,7 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash",
       contents: userMessage,
     });
 
@@ -176,5 +182,5 @@ app.post("/api/chat", async (req, res) => {
 
 const APP_PORT = 3000;
 app.listen(APP_PORT, () => {
-  console.log("Listening...");
+  console.log("Listening on http://127.0.0.1:" + APP_PORT);
 });
