@@ -30,7 +30,7 @@ form.addEventListener("submit", async function (e) {
         botMessageElement.textContent =
           data.message || "Sorry, an error occurred.";
       } else {
-        botMessageElement.textContent = data.output;
+        botMessageElement.innerHTML = marked.parse(data.output);
       }
     })
     .catch((error) => {
