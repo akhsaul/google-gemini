@@ -6,12 +6,15 @@ import {
 import express from "express";
 import multer from "multer";
 import fs from "fs";
+import cors from "cors";
 
 const gemini_secret = process.env["REACT_APP_GEMINI_KEY"];
 const ai = new GoogleGenAI({ apiKey: gemini_secret });
 
 const app = express();
+app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
 
 const upload = multer({
   dest: "uploads/",
@@ -31,9 +34,9 @@ app.post("/generate-text", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    req.status(500).json({
+    res.status(500).json({
       error: true,
-      message: e.message,
+      message: error.message,
     });
   }
 });
@@ -103,7 +106,8 @@ app.post(
     } catch (error) {
       console.error("Error generating content:", error);
       res.status(500).json({
-        error: e.message,
+        error: true,
+        message: error.message,
       });
     } finally {
       fs.unlinkSync(req.file.path);
@@ -136,9 +140,37 @@ app.post("/generate-from-audio", upload.single("audio"), async (req, res) => {
     res.json({ output: result.text });
   } catch (error) {
     console.error("Error generating content:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: true,
+      message: error.message,
+    });
   } finally {
     fs.unlinkSync(req.file.path);
+  }
+});
+
+app.post("/api/chat", async (req, res) => {
+  const userMessage = req.body.message;
+  if (!userMessage) {
+    return res.status(400).json({
+      error: true,
+      message: "Message is required!",
+    });
+  }
+
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: userMessage,
+    });
+
+    res.json({ error: false, output: result.text });
+  } catch (error) {
+    console.error("Chat API error:", error);
+    res.status(500).json({
+      error: true,
+      message: "Something went wrong!",
+    });
   }
 });
 
